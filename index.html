@@ -1,0 +1,1714 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SporTogather — Trova la tua squadra</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+  :root {
+    --bg-primary: #0B1120;
+    --bg-secondary: #101829;
+    --bg-card: #151E30;
+    --bg-elevated: #1C2840;
+    --accent: #2196F3;
+    --accent-dark: #1565C0;
+    --accent-light: #64B5F6;
+    --accent-glow: rgba(33, 150, 243, 0.12);
+    --accent-glow-strong: rgba(33, 150, 243, 0.25);
+    --teal: #00BFA5;
+    --teal-glow: rgba(0, 191, 165, 0.12);
+    --text-primary: #E8EDF5;
+    --text-secondary: #8B9DC3;
+    --text-muted: #506080;
+    --border: #1E2E48;
+    --success: #00C853;
+    --warning: #FFB300;
+    --snow: #E3F2FD;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: #060A14;
+    color: var(--text-primary);
+    overflow: hidden;
+    height: 100vh;
+  }
+
+  /* ─── Phone Frame ─── */
+  .phone-frame {
+    width: 390px;
+    height: 844px;
+    margin: 20px auto;
+    border-radius: 44px;
+    border: 3px solid #1E2E48;
+    overflow: hidden;
+    position: relative;
+    background: var(--bg-primary);
+    box-shadow: 0 25px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(33,150,243,0.08);
+  }
+
+  .phone-frame::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 50%;
+    transform: translateX(-50%);
+    width: 160px; height: 34px;
+    background: #050810;
+    border-radius: 0 0 20px 20px;
+    z-index: 100;
+  }
+
+  /* ─── Status Bar ─── */
+  .status-bar {
+    height: 54px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    padding: 0 28px 8px;
+    font-size: 14px;
+    font-weight: 600;
+    z-index: 50;
+    position: relative;
+  }
+
+  .status-bar .time { font-size: 15px; font-weight: 700; }
+  .status-bar .icons { display: flex; gap: 6px; font-size: 12px; }
+
+  /* ─── Screens ─── */
+  .screen {
+    display: none !important;
+    height: calc(844px - 54px);
+    overflow-y: auto;
+    position: relative;
+    scrollbar-width: none;
+  }
+  .screen::-webkit-scrollbar { display: none; }
+  .screen.active { display: block !important; }
+
+  /* Splash override */
+  #splash.active {
+    display: flex !important;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* ─── Navigation ─── */
+  .bottom-nav {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 84px;
+    background: rgba(11,17,32,0.95);
+    backdrop-filter: blur(20px);
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-around;
+    padding-top: 10px;
+    z-index: 90;
+  }
+
+  .nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    opacity: 0.45;
+    transition: all 0.2s;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .nav-item.active { opacity: 1; }
+  .nav-item.active .nav-icon { color: var(--accent); }
+  .nav-item.active .nav-label { color: var(--accent-light); }
+
+  .nav-icon { font-size: 22px; }
+  .nav-label { font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--text-muted); }
+
+  /* ─── Header ─── */
+  .screen-header {
+    padding: 16px 20px 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: sticky;
+    top: 0;
+    background: rgba(11,17,32,0.92);
+    backdrop-filter: blur(20px);
+    z-index: 10;
+  }
+
+  .back-btn {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+  }
+  .back-btn:hover { background: var(--accent-glow); border-color: var(--accent); }
+
+  .screen-title { font-size: 18px; font-weight: 700; }
+
+  /* ─── Splash Screen ─── */
+  #splash {
+    height: calc(844px - 54px);
+    background: linear-gradient(180deg, var(--bg-primary) 0%, #0A1628 50%, #0D1B30 100%);
+    text-align: center;
+    padding: 40px;
+  }
+
+  /* Logo SVG */
+  .splash-logo {
+    width: 110px; height: 110px;
+    margin-bottom: 28px;
+    filter: drop-shadow(0 8px 30px rgba(33, 150, 243, 0.3));
+  }
+
+  .splash-name {
+    font-size: 34px;
+    font-weight: 900;
+    letter-spacing: -1px;
+    margin-bottom: 4px;
+  }
+
+  .splash-name .sport { color: var(--text-primary); }
+  .splash-name .to { color: var(--accent); }
+  .splash-name .gather { color: var(--teal); }
+
+  .splash-tagline {
+    font-size: 15px;
+    color: var(--text-secondary);
+    margin-bottom: 48px;
+    line-height: 1.6;
+  }
+
+  .splash-btn {
+    width: 100%;
+    padding: 16px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+    border: none;
+    border-radius: 14px;
+    color: white;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    letter-spacing: 0.5px;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .splash-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 30px rgba(33, 150, 243, 0.35);
+  }
+
+  /* ─── Sport Grid ─── */
+  .sport-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    padding: 20px;
+  }
+
+  .sport-card {
+    aspect-ratio: 1;
+    border-radius: 16px;
+    background: var(--bg-card);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .sport-card:hover {
+    border-color: var(--accent);
+    background: var(--accent-glow);
+    transform: scale(1.03);
+  }
+
+  .sport-icon { font-size: 32px; }
+  .sport-name { font-size: 11px; font-weight: 600; text-align: center; line-height: 1.3; }
+
+  .sport-badge {
+    position: absolute;
+    top: 6px; right: 6px;
+    background: var(--accent);
+    color: white;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 6px;
+  }
+
+  /* ─── Feed ─── */
+  .feed-hero {
+    height: 200px;
+    background-size: cover;
+    background-position: center;
+    display: flex;
+    align-items: flex-end;
+    padding: 20px;
+    position: relative;
+  }
+
+  .feed-hero-content h1 {
+    font-size: 28px;
+    font-weight: 900;
+    letter-spacing: -0.5px;
+  }
+
+  .feed-hero-content p {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-top: 4px;
+  }
+
+  .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 20px 12px;
+  }
+
+  .section-title { font-size: 16px; font-weight: 700; }
+
+  .section-link {
+    font-size: 13px;
+    color: var(--accent);
+    cursor: pointer;
+    font-weight: 600;
+  }
+
+  .people-scroll {
+    display: flex;
+    gap: 16px;
+    padding: 0 20px 20px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .people-scroll::-webkit-scrollbar { display: none; }
+
+  .person-card {
+    flex-shrink: 0;
+    width: 110px;
+    text-align: center;
+    cursor: pointer;
+    transition: transform 0.2s;
+  }
+  .person-card:hover { transform: translateY(-2px); }
+
+  .person-avatar {
+    width: 80px; height: 80px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--border);
+    margin-bottom: 8px;
+    transition: border-color 0.2s;
+  }
+  .person-card:hover .person-avatar { border-color: var(--accent); }
+
+  .person-name { font-size: 13px; font-weight: 600; }
+
+  .online-dot {
+    width: 12px; height: 12px;
+    background: var(--teal);
+    border-radius: 50%;
+    border: 2px solid var(--bg-primary);
+    position: absolute;
+    bottom: 4px; right: 4px;
+  }
+
+  .avatar-wrapper { position: relative; display: inline-block; }
+
+  .compat-hint {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    margin-top: 4px;
+  }
+  .compat-dots { display: flex; gap: 2px; }
+  .compat-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+  .compat-dot.empty { background: transparent; border: 1px solid var(--text-muted); }
+
+  /* Trip Cards */
+  .trip-card {
+    margin: 0 20px 16px;
+    background: var(--bg-card);
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .trip-card:hover { border-color: var(--accent); transform: translateY(-1px); }
+
+  .trip-card-img {
+    height: 140px;
+    background-size: cover;
+    background-position: center;
+    position: relative;
+  }
+
+  .trip-difficulty {
+    position: absolute;
+    top: 12px; left: 12px;
+    background: rgba(11,17,32,0.75);
+    backdrop-filter: blur(8px);
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--accent-light);
+  }
+
+  .trip-date-badge {
+    position: absolute;
+    top: 12px; right: 12px;
+    background: var(--accent);
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 700;
+    color: white;
+  }
+
+  .trip-card-body { padding: 16px; }
+  .trip-card-title { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+  .trip-card-location { font-size: 12px; color: var(--text-secondary); margin-bottom: 12px; }
+
+  .trip-card-meta { display: flex; gap: 16px; }
+
+  .trip-meta-item {
+    font-size: 11px;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .trip-meta-value { color: var(--text-primary); font-weight: 600; }
+
+  .trip-participants {
+    display: flex;
+    align-items: center;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+  }
+
+  .trip-avatars { display: flex; margin-right: 10px; }
+  .trip-avatars img {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--bg-card);
+    margin-left: -8px;
+  }
+  .trip-avatars img:first-child { margin-left: 0; }
+
+  .trip-spots { font-size: 12px; color: var(--text-secondary); }
+  .trip-spots strong { color: var(--teal); }
+
+  /* ─── Profile Screen ─── */
+  .profile-cover {
+    height: 260px;
+    background-size: cover;
+    background-position: center top;
+    position: relative;
+  }
+  .profile-cover::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 120px;
+    background: linear-gradient(transparent, var(--bg-primary));
+  }
+
+  .profile-info {
+    padding: 0 20px;
+    margin-top: -50px;
+    position: relative;
+    z-index: 2;
+  }
+
+  .profile-avatar-lg {
+    width: 90px; height: 90px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid var(--bg-primary);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+  }
+
+  .profile-name-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 12px;
+  }
+
+  .profile-name { font-size: 22px; font-weight: 800; }
+
+  .profile-invite-btn {
+    padding: 8px 20px;
+    background: var(--accent);
+    border: none;
+    border-radius: 10px;
+    color: white;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.2s;
+  }
+  .profile-invite-btn:hover { transform: scale(1.05); }
+
+  .profile-bio {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-top: 8px;
+    line-height: 1.5;
+  }
+
+  .profile-stats {
+    display: flex;
+    margin-top: 20px;
+    background: var(--bg-card);
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+  }
+
+  .profile-stat {
+    flex: 1;
+    text-align: center;
+    padding: 14px 8px;
+    border-right: 1px solid var(--border);
+  }
+  .profile-stat:last-child { border-right: none; }
+
+  .stat-value { font-size: 20px; font-weight: 800; color: var(--accent-light); }
+  .stat-label { font-size: 10px; color: var(--text-muted); font-weight: 600; margin-top: 2px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+  .profile-sports {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 20px;
+  }
+
+  .sport-tag {
+    padding: 6px 14px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .sport-tag.primary {
+    border-color: var(--accent);
+    background: var(--accent-glow);
+    color: var(--accent-light);
+  }
+
+  .profile-gallery {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 3px;
+    margin-top: 20px;
+  }
+
+  .gallery-img {
+    aspect-ratio: 1;
+    object-fit: cover;
+    width: 100%;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+  .gallery-img:hover { opacity: 0.8; }
+
+  /* ─── Trip Detail ─── */
+  .trip-detail-hero {
+    height: 240px;
+    background-size: cover;
+    background-position: center;
+    position: relative;
+  }
+  .trip-detail-hero::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 140px;
+    background: linear-gradient(transparent, var(--bg-primary));
+  }
+
+  .trip-detail-content {
+    padding: 0 20px;
+    margin-top: -40px;
+    position: relative;
+    z-index: 2;
+    padding-bottom: 100px;
+  }
+
+  .trip-detail-title {
+    font-size: 24px;
+    font-weight: 900;
+    letter-spacing: -0.5px;
+    line-height: 1.2;
+  }
+
+  .trip-detail-subtitle {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-top: 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .gulliver-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--teal-glow);
+    border: 1px solid rgba(0, 191, 165, 0.3);
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 10px;
+    color: var(--teal);
+    font-weight: 600;
+  }
+
+  .trip-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-top: 20px;
+  }
+
+  .trip-stat-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px;
+  }
+
+  .trip-stat-label {
+    font-size: 10px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+  }
+
+  .trip-stat-value {
+    font-size: 18px;
+    font-weight: 800;
+    margin-top: 4px;
+  }
+
+  .trip-stat-unit {
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-weight: 400;
+  }
+
+  /* Participants */
+  .participant-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .participant-row:hover { background: var(--bg-card); margin: 0 -20px; padding: 12px 20px; border-radius: 12px; }
+
+  .participant-avatar {
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    object-fit: cover;
+  }
+
+  .participant-info { flex: 1; }
+  .participant-name { font-size: 14px; font-weight: 600; }
+  .participant-role { font-size: 12px; color: var(--text-muted); }
+
+  .participant-status {
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .status-confirmed { background: rgba(0,200,83,0.12); color: var(--success); }
+
+  .match-score {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 10px;
+    color: var(--text-muted);
+    background: var(--bg-elevated);
+    padding: 2px 8px;
+    border-radius: 10px;
+    margin-left: 8px;
+  }
+
+  /* Map */
+  .map-container {
+    margin-top: 20px;
+    border-radius: 14px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    position: relative;
+  }
+
+  .map-img { width: 100%; height: 180px; object-fit: cover; display: block; }
+
+  .map-overlay {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    padding: 12px 16px;
+    background: linear-gradient(transparent, rgba(11,17,32,0.9));
+  }
+  .map-location { font-size: 13px; font-weight: 600; }
+  .map-coords { font-size: 11px; color: var(--text-muted); }
+
+  /* ─── Transport ─── */
+  .transport-card {
+    margin: 0 20px 12px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px;
+  }
+
+  .transport-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .transport-icon-wrap {
+    width: 42px; height: 42px;
+    border-radius: 12px;
+    background: var(--accent-glow);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+  }
+
+  .transport-title { font-size: 15px; font-weight: 700; }
+  .transport-sub { font-size: 12px; color: var(--text-muted); }
+
+  .transport-detail-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-top: 1px solid var(--border);
+    font-size: 13px;
+  }
+  .transport-label { color: var(--text-muted); }
+  .transport-value { font-weight: 600; }
+
+  /* ─── CTA Button ─── */
+  .cta-btn {
+    width: 100%;
+    padding: 15px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+    border: none;
+    border-radius: 14px;
+    color: white;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    letter-spacing: 0.3px;
+  }
+  .cta-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 25px rgba(33,150,243,0.35);
+  }
+
+  /* ─── Create Trip ─── */
+  .form-group { padding: 0 20px; margin-bottom: 20px; }
+
+  .form-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+    display: block;
+  }
+
+  .form-input {
+    width: 100%;
+    padding: 14px 16px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    color: var(--text-primary);
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .form-input:focus { border-color: var(--accent); }
+  .form-input::placeholder { color: var(--text-muted); }
+
+  .gulliver-import-card {
+    margin: 0 20px 20px;
+    background: linear-gradient(135deg, var(--teal-glow), rgba(0,191,165,0.03));
+    border: 1px solid rgba(0,191,165,0.2);
+    border-radius: 14px;
+    padding: 16px;
+    cursor: pointer;
+    transition: border-color 0.2s;
+  }
+  .gulliver-import-card:hover { border-color: var(--teal); }
+
+  .gulliver-import-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+
+  .gulliver-logo { font-size: 13px; font-weight: 700; color: var(--teal); }
+  .gulliver-import-text { font-size: 13px; color: var(--text-secondary); }
+  .gulliver-url { font-size: 11px; color: var(--teal); margin-top: 6px; word-break: break-all; }
+
+  /* ─── Chat ─── */
+  .chat-container {
+    padding: 12px 20px 100px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .chat-date {
+    text-align: center;
+    font-size: 11px;
+    color: var(--text-muted);
+    font-weight: 600;
+    padding: 8px 0;
+  }
+
+  .chat-message {
+    display: flex;
+    gap: 10px;
+    max-width: 85%;
+  }
+  .chat-message.self {
+    align-self: flex-end;
+    flex-direction: row-reverse;
+  }
+
+  .chat-avatar {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+  }
+
+  .chat-bubble {
+    padding: 10px 14px;
+    border-radius: 16px;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .chat-message:not(.self) .chat-bubble {
+    background: var(--bg-elevated);
+    border-bottom-left-radius: 4px;
+  }
+  .chat-message.self .chat-bubble {
+    background: var(--accent-dark);
+    border-bottom-right-radius: 4px;
+  }
+
+  .chat-sender {
+    font-size: 11px;
+    font-weight: 700;
+    margin-bottom: 2px;
+    color: var(--accent-light);
+  }
+
+  .chat-time {
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-top: 4px;
+  }
+
+  .chat-input-bar {
+    position: absolute;
+    bottom: 84px; left: 0; right: 0;
+    padding: 10px 20px;
+    background: rgba(11,17,32,0.95);
+    backdrop-filter: blur(20px);
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .chat-input {
+    flex: 1;
+    padding: 10px 16px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    color: white;
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+  }
+
+  .chat-send-btn {
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: none;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Trip timeline */
+  .trip-timeline { margin-top: 24px; }
+
+  .timeline-item {
+    display: flex;
+    gap: 12px;
+    padding-bottom: 20px;
+    position: relative;
+  }
+  .timeline-item::before {
+    content: '';
+    position: absolute;
+    left: 15px; top: 32px; bottom: 0;
+    width: 2px;
+    background: var(--border);
+  }
+  .timeline-item:last-child::before { display: none; }
+
+  .timeline-dot {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: var(--bg-elevated);
+    border: 2px solid var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+    z-index: 1;
+  }
+
+  .timeline-content { flex: 1; }
+  .timeline-time { font-size: 11px; color: var(--accent-light); font-weight: 700; }
+  .timeline-text { font-size: 13px; margin-top: 2px; line-height: 1.4; }
+  .timeline-sub { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+  /* ─── + button in nav ─── */
+  .nav-plus {
+    width: 44px; height: 44px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: -16px;
+    font-size: 20px;
+    box-shadow: 0 4px 15px rgba(33,150,243,0.4);
+    color: white;
+    font-weight: 700;
+  }
+
+  /* Scrollbar */
+  .screen { -ms-overflow-style: none; }
+</style>
+</head>
+<body>
+
+<div class="phone-frame">
+  <div class="status-bar">
+    <span class="time">9:41</span>
+    <div class="icons">
+      <span>📶</span>
+      <span>🔋</span>
+    </div>
+  </div>
+
+  <!-- ═══════════ SPLASH ═══════════ -->
+  <div id="splash" class="screen active">
+    <!-- SVG Logo -->
+    <svg class="splash-logo" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" style="stop-color:#2196F3"/>
+          <stop offset="100%" style="stop-color:#00BFA5"/>
+        </linearGradient>
+        <linearGradient id="mountainGrad" x1="0%" y1="100%" x2="0%" y2="0%">
+          <stop offset="0%" style="stop-color:#1565C0"/>
+          <stop offset="100%" style="stop-color:#64B5F6"/>
+        </linearGradient>
+      </defs>
+      <rect width="120" height="120" rx="28" fill="url(#logoGrad)"/>
+      <!-- Mountains -->
+      <polygon points="15,85 42,40 55,58 70,30 95,75 105,85" fill="url(#mountainGrad)" opacity="0.6"/>
+      <polygon points="25,85 50,50 65,65 80,38 100,85" fill="white" opacity="0.25"/>
+      <!-- Snow caps -->
+      <polygon points="70,30 65,38 75,38" fill="white" opacity="0.9"/>
+      <polygon points="42,40 38,46 46,46" fill="white" opacity="0.7"/>
+      <!-- Skier silhouette -->
+      <g transform="translate(35, 55) scale(0.6)" fill="white" opacity="0.95">
+        <circle cx="12" cy="5" r="5"/>
+        <path d="M5,12 L12,25 L20,12 M12,15 L12,32 M5,38 L12,32 L19,38" stroke="white" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <line x1="0" y1="20" x2="28" y2="14" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+      </g>
+      <!-- People dots -->
+      <circle cx="88" cy="58" r="4" fill="white" opacity="0.7"/>
+      <circle cx="96" cy="65" r="3.5" fill="white" opacity="0.5"/>
+      <circle cx="83" cy="66" r="3" fill="white" opacity="0.4"/>
+    </svg>
+
+    <div class="splash-name">
+      <span class="sport">Spor</span><span class="to">T</span><span class="gather">ogather</span>
+    </div>
+    <p class="splash-tagline">Trova la tua squadra.<br>Esci, muoviti, condividi.</p>
+    <button class="splash-btn" onclick="navigate('home')">Inizia</button>
+  </div>
+
+  <!-- ═══════════ HOME ═══════════ -->
+  <div id="home" class="screen">
+    <div style="padding: 20px 20px 8px; display: flex; align-items: center; gap: 12px;">
+      <svg width="32" height="32" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+        <defs><linearGradient id="sm" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#2196F3"/><stop offset="100%" style="stop-color:#00BFA5"/></linearGradient></defs>
+        <rect width="120" height="120" rx="28" fill="url(#sm)"/>
+        <polygon points="25,85 50,50 65,65 80,38 100,85" fill="white" opacity="0.3"/>
+        <polygon points="80,38 76,44 84,44" fill="white" opacity="0.8"/>
+      </svg>
+      <div>
+        <div style="font-size: 24px; font-weight: 900; letter-spacing: -0.5px;">Ciao Francesco</div>
+        <div style="font-size: 13px; color: var(--text-secondary); margin-top: 2px;">Scegli il tuo sport</div>
+      </div>
+    </div>
+
+    <div class="sport-grid">
+      <div class="sport-card" onclick="navigate('feed')">
+        <div class="sport-badge">3</div>
+        <div class="sport-icon">⛷️</div>
+        <div class="sport-name">Scialpinismo</div>
+      </div>
+      <div class="sport-card">
+        <div class="sport-icon">🎿</div>
+        <div class="sport-name">Sci</div>
+      </div>
+      <div class="sport-card">
+        <div class="sport-icon">🏂</div>
+        <div class="sport-name">Snowboard</div>
+      </div>
+      <div class="sport-card">
+        <div class="sport-icon">🏸</div>
+        <div class="sport-name">Padel</div>
+      </div>
+      <div class="sport-card">
+        <div class="sport-icon">🎾</div>
+        <div class="sport-name">Tennis</div>
+      </div>
+      <div class="sport-card">
+        <div class="sport-icon">⚽</div>
+        <div class="sport-name">Calcetto</div>
+      </div>
+      <div class="sport-card">
+        <div class="sport-icon">🏐</div>
+        <div class="sport-name">Pallavolo</div>
+      </div>
+      <div class="sport-card">
+        <div class="sport-icon">🏖️</div>
+        <div class="sport-name">Beach Volley</div>
+      </div>
+      <div class="sport-card">
+        <div class="sport-icon">🤽</div>
+        <div class="sport-name">Pallanuoto</div>
+      </div>
+      <div class="sport-card">
+        <div class="sport-icon">🚴</div>
+        <div class="sport-name">Ciclismo / Gravel</div>
+      </div>
+      <div class="sport-card">
+        <div class="sport-icon">🚵</div>
+        <div class="sport-name">MTB</div>
+      </div>
+      <div class="sport-card">
+        <div class="sport-icon">🥾</div>
+        <div class="sport-name">Escursioni</div>
+      </div>
+    </div>
+    <div style="height: 100px;"></div>
+
+    <div class="bottom-nav">
+      <div class="nav-item active" onclick="navigate('home')"><div class="nav-icon">🏠</div><div class="nav-label">HOME</div></div>
+      <div class="nav-item" onclick="navigate('feed')"><div class="nav-icon">🔍</div><div class="nav-label">ESPLORA</div></div>
+      <div class="nav-item" onclick="navigate('create-trip')"><div class="nav-plus">+</div></div>
+      <div class="nav-item" onclick="navigate('chat')"><div class="nav-icon">💬</div><div class="nav-label">CHAT</div></div>
+      <div class="nav-item" onclick="navigate('profile-francesco')"><div class="nav-icon">👤</div><div class="nav-label">PROFILO</div></div>
+    </div>
+  </div>
+
+  <!-- ═══════════ FEED SCIALPINISMO ═══════════ -->
+  <div id="feed" class="screen">
+    <div class="feed-hero" style="background-image: linear-gradient(180deg, rgba(11,17,32,0.3) 0%, var(--bg-primary) 100%), url('https://images.unsplash.com/photo-1551632811-561732d1e306?w=800&q=80');">
+      <div class="feed-hero-content">
+        <h1>⛷️ Scialpinismo</h1>
+        <p>3 persone nella tua zona · 2 gite in programma</p>
+      </div>
+    </div>
+
+    <div class="section-header">
+      <div class="section-title">Persone compatibili</div>
+      <div class="section-link">Vedi tutti</div>
+    </div>
+
+    <div class="people-scroll">
+      <div class="person-card" onclick="navigate('profile-monica')">
+        <div class="avatar-wrapper">
+          <img class="person-avatar" src="https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=200&q=80" alt="Monica">
+          <div class="online-dot"></div>
+        </div>
+        <div class="person-name">Monica</div>
+        <div class="compat-hint"><div class="compat-dots"><div class="compat-dot"></div><div class="compat-dot"></div><div class="compat-dot"></div><div class="compat-dot"></div><div class="compat-dot empty"></div></div></div>
+      </div>
+      <div class="person-card" onclick="navigate('profile-nicola')">
+        <div class="avatar-wrapper">
+          <img class="person-avatar" src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=200&q=80" alt="Nicola">
+          <div class="online-dot"></div>
+        </div>
+        <div class="person-name">Nicola</div>
+        <div class="compat-hint"><div class="compat-dots"><div class="compat-dot"></div><div class="compat-dot"></div><div class="compat-dot"></div><div class="compat-dot"></div><div class="compat-dot empty"></div></div></div>
+      </div>
+      <div class="person-card">
+        <div class="avatar-wrapper">
+          <img class="person-avatar" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&q=80" alt="Laura">
+        </div>
+        <div class="person-name">Laura</div>
+        <div class="compat-hint"><div class="compat-dots"><div class="compat-dot"></div><div class="compat-dot"></div><div class="compat-dot empty"></div><div class="compat-dot empty"></div><div class="compat-dot empty"></div></div></div>
+      </div>
+      <div class="person-card">
+        <div class="avatar-wrapper">
+          <img class="person-avatar" src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&q=80" alt="Marco">
+        </div>
+        <div class="person-name">Marco L.</div>
+        <div class="compat-hint"><div class="compat-dots"><div class="compat-dot"></div><div class="compat-dot"></div><div class="compat-dot"></div><div class="compat-dot empty"></div><div class="compat-dot empty"></div></div></div>
+      </div>
+    </div>
+
+    <div class="section-header">
+      <div class="section-title">Gite in programma</div>
+      <div class="section-link" onclick="navigate('create-trip')">+ Crea</div>
+    </div>
+
+    <div class="trip-card" onclick="navigate('trip-detail')">
+      <div class="trip-card-img" style="background-image: url('https://images.unsplash.com/photo-1491555103944-7c647fd857e6?w=600&q=80')">
+        <div class="trip-difficulty">BSA</div>
+        <div class="trip-date-badge">5 Apr</div>
+      </div>
+      <div class="trip-card-body">
+        <div class="trip-card-title">Gran Paradiso 4061m</div>
+        <div class="trip-card-location">📍 Pont Valsavarenche, Valle d'Aosta</div>
+        <div class="trip-card-meta">
+          <div class="trip-meta-item">↗️ <span class="trip-meta-value">2100m</span> D+</div>
+          <div class="trip-meta-item">⏱ <span class="trip-meta-value">2 giorni</span></div>
+          <div class="trip-meta-item">🏔 <span class="trip-meta-value">4061m</span></div>
+        </div>
+        <div class="trip-participants">
+          <div class="trip-avatars">
+            <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&q=80" alt="">
+            <img src="https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=100&q=80" alt="">
+            <img src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=100&q=80" alt="">
+          </div>
+          <div class="trip-spots"><strong>3/3</strong> confermati — Squadra completa!</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="trip-card">
+      <div class="trip-card-img" style="background-image: url('https://images.unsplash.com/photo-1520962922320-2038eebab146?w=600&q=80')">
+        <div class="trip-difficulty">MS</div>
+        <div class="trip-date-badge">19 Apr</div>
+      </div>
+      <div class="trip-card-body">
+        <div class="trip-card-title">Monte Rosa — Punta Gnifetti</div>
+        <div class="trip-card-location">📍 Gressoney, Valle d'Aosta</div>
+        <div class="trip-card-meta">
+          <div class="trip-meta-item">↗️ <span class="trip-meta-value">2400m</span> D+</div>
+          <div class="trip-meta-item">⏱ <span class="trip-meta-value">2 giorni</span></div>
+          <div class="trip-meta-item">🏔 <span class="trip-meta-value">4554m</span></div>
+        </div>
+        <div class="trip-participants">
+          <div class="trip-avatars">
+            <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&q=80" alt="">
+          </div>
+          <div class="trip-spots">1/3 — <span style="color: var(--accent);">Cerca compagni</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div style="height: 100px;"></div>
+    <div class="bottom-nav">
+      <div class="nav-item" onclick="navigate('home')"><div class="nav-icon">🏠</div><div class="nav-label">HOME</div></div>
+      <div class="nav-item active"><div class="nav-icon">🔍</div><div class="nav-label">ESPLORA</div></div>
+      <div class="nav-item" onclick="navigate('create-trip')"><div class="nav-plus">+</div></div>
+      <div class="nav-item" onclick="navigate('chat')"><div class="nav-icon">💬</div><div class="nav-label">CHAT</div></div>
+      <div class="nav-item" onclick="navigate('profile-francesco')"><div class="nav-icon">👤</div><div class="nav-label">PROFILO</div></div>
+    </div>
+  </div>
+
+  <!-- ═══════════ PROFILE: Francesco ═══════════ -->
+  <div id="profile-francesco" class="screen">
+    <div class="profile-cover" style="background-image: url('https://images.unsplash.com/photo-1551632811-561732d1e306?w=800&q=80');">
+      <div class="screen-header" style="background: transparent;"><button class="back-btn" onclick="navigate('feed')">←</button></div>
+    </div>
+    <div class="profile-info">
+      <img class="profile-avatar-lg" src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300&q=80" alt="Francesco">
+      <div class="profile-name-row">
+        <div>
+          <div class="profile-name">Francesco</div>
+          <div style="font-size: 12px; color: var(--text-muted);">Torino · 32 anni</div>
+        </div>
+      </div>
+      <p class="profile-bio">Ingegnere di giorno, alpinista nel weekend. Non c'è vetta che non valga la fatica di raggiungerla. Cerco compagni con cui condividere la passione per la montagna e non solo.</p>
+      <div class="profile-stats">
+        <div class="profile-stat"><div class="stat-value">47</div><div class="stat-label">Gite</div></div>
+        <div class="profile-stat"><div class="stat-value">89K</div><div class="stat-label">D+ totale</div></div>
+        <div class="profile-stat"><div class="stat-value">4.8</div><div class="stat-label">Rating</div></div>
+      </div>
+      <div class="section-header" style="padding: 20px 0 8px;"><div class="section-title">Sport</div></div>
+      <div class="profile-sports">
+        <div class="sport-tag primary">⛷️ Scialpinismo</div>
+        <div class="sport-tag">🚵 MTB</div>
+        <div class="sport-tag">🏃 Trail Running</div>
+        <div class="sport-tag">🧗 Arrampicata</div>
+        <div class="sport-tag">🚴 Gravel</div>
+      </div>
+      <div class="section-header" style="padding: 20px 0 8px;"><div class="section-title">Momenti</div></div>
+      <div class="profile-gallery">
+        <img class="gallery-img" src="https://images.unsplash.com/photo-1551632811-561732d1e306?w=300&q=80" alt="">
+        <img class="gallery-img" src="https://images.unsplash.com/photo-1544191696-102dbdaeeaa0?w=300&q=80" alt="">
+        <img class="gallery-img" src="https://images.unsplash.com/photo-1571188654248-7a89213915f7?w=300&q=80" alt="">
+        <img class="gallery-img" src="https://images.unsplash.com/photo-1541625602330-2277a4c46182?w=300&q=80" alt="">
+        <img class="gallery-img" src="https://images.unsplash.com/photo-1517649763962-0c623066013b?w=300&q=80" alt="">
+        <img class="gallery-img" src="https://images.unsplash.com/photo-1486218119243-13883505764c?w=300&q=80" alt="">
+      </div>
+      <div style="height: 120px;"></div>
+    </div>
+    <div class="bottom-nav">
+      <div class="nav-item" onclick="navigate('home')"><div class="nav-icon">🏠</div><div class="nav-label">HOME</div></div>
+      <div class="nav-item" onclick="navigate('feed')"><div class="nav-icon">🔍</div><div class="nav-label">ESPLORA</div></div>
+      <div class="nav-item" onclick="navigate('create-trip')"><div class="nav-plus">+</div></div>
+      <div class="nav-item" onclick="navigate('chat')"><div class="nav-icon">💬</div><div class="nav-label">CHAT</div></div>
+      <div class="nav-item active"><div class="nav-icon">👤</div><div class="nav-label">PROFILO</div></div>
+    </div>
+  </div>
+
+  <!-- ═══════════ PROFILE: Monica ═══════════ -->
+  <div id="profile-monica" class="screen">
+    <div class="profile-cover" style="background-image: url('https://images.unsplash.com/photo-1520962922320-2038eebab146?w=800&q=80');">
+      <div class="screen-header" style="background: transparent;"><button class="back-btn" onclick="navigate('feed')">←</button></div>
+    </div>
+    <div class="profile-info">
+      <img class="profile-avatar-lg" src="https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=300&q=80" alt="Monica">
+      <div class="profile-name-row">
+        <div>
+          <div class="profile-name">Monica</div>
+          <div style="font-size: 12px; color: var(--text-muted);">Torino · 29 anni</div>
+        </div>
+        <button class="profile-invite-btn" onclick="navigate('trip-detail')">Invita</button>
+      </div>
+      <p class="profile-bio">Fisioterapista sportiva. La neve e la roccia sono la mia terapia. Amo le albe in quota e i rifugi affollati. Sempre in cerca di nuove avventure e nuove persone con cui viverle.</p>
+      <div class="profile-stats">
+        <div class="profile-stat"><div class="stat-value">38</div><div class="stat-label">Gite</div></div>
+        <div class="profile-stat"><div class="stat-value">72K</div><div class="stat-label">D+ totale</div></div>
+        <div class="profile-stat"><div class="stat-value">4.9</div><div class="stat-label">Rating</div></div>
+      </div>
+      <div class="section-header" style="padding: 20px 0 8px;"><div class="section-title">Sport</div></div>
+      <div class="profile-sports">
+        <div class="sport-tag primary">⛷️ Scialpinismo</div>
+        <div class="sport-tag">🧗 Arrampicata</div>
+        <div class="sport-tag">🧘 Yoga</div>
+        <div class="sport-tag">🏃 Trail Running</div>
+        <div class="sport-tag">🏂 Snowboard</div>
+      </div>
+      <div class="section-header" style="padding: 20px 0 8px;"><div class="section-title">Momenti</div></div>
+      <div class="profile-gallery">
+        <img class="gallery-img" src="https://images.unsplash.com/photo-1520962922320-2038eebab146?w=300&q=80" alt="">
+        <img class="gallery-img" src="https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=300&q=80" alt="">
+        <img class="gallery-img" src="https://images.unsplash.com/photo-1522163182402-834f871fd851?w=300&q=80" alt="">
+        <img class="gallery-img" src="https://images.unsplash.com/photo-1502904550040-7534597429ae?w=300&q=80" alt="">
+        <img class="gallery-img" src="https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=300&q=80" alt="">
+        <img class="gallery-img" src="https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=300&q=80" alt="">
+      </div>
+      <div style="height: 120px;"></div>
+    </div>
+    <div class="bottom-nav">
+      <div class="nav-item" onclick="navigate('home')"><div class="nav-icon">🏠</div><div class="nav-label">HOME</div></div>
+      <div class="nav-item" onclick="navigate('feed')"><div class="nav-icon">🔍</div><div class="nav-label">ESPLORA</div></div>
+      <div class="nav-item" onclick="navigate('create-trip')"><div class="nav-plus">+</div></div>
+      <div class="nav-item" onclick="navigate('chat')"><div class="nav-icon">💬</div><div class="nav-label">CHAT</div></div>
+      <div class="nav-item" onclick="navigate('profile-francesco')"><div class="nav-icon">👤</div><div class="nav-label">PROFILO</div></div>
+    </div>
+  </div>
+
+  <!-- ═══════════ PROFILE: Nicola ═══════════ -->
+  <div id="profile-nicola" class="screen">
+    <div class="profile-cover" style="background-image: url('https://images.unsplash.com/photo-1491555103944-7c647fd857e6?w=800&q=80');">
+      <div class="screen-header" style="background: transparent;"><button class="back-btn" onclick="navigate('feed')">←</button></div>
+    </div>
+    <div class="profile-info">
+      <img class="profile-avatar-lg" src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=300&q=80" alt="Nicola">
+      <div class="profile-name-row">
+        <div>
+          <div class="profile-name">Nicola</div>
+          <div style="font-size: 12px; color: var(--text-muted);">Torino · 34 anni</div>
+        </div>
+        <button class="profile-invite-btn" onclick="navigate('trip-detail')">Invita</button>
+      </div>
+      <p class="profile-bio">Architetto, fotografo per passione. Colleziono tramonti dalle creste e albe dai bivacchi. In montagna trovi chi sei davvero — e a volte anche chi cercavi.</p>
+      <div class="profile-stats">
+        <div class="profile-stat"><div class="stat-value">62</div><div class="stat-label">Gite</div></div>
+        <div class="profile-stat"><div class="stat-value">118K</div><div class="stat-label">D+ totale</div></div>
+        <div class="profile-stat"><div class="stat-value">4.7</div><div class="stat-label">Rating</div></div>
+      </div>
+      <div class="section-header" style="padding: 20px 0 8px;"><div class="section-title">Sport</div></div>
+      <div class="profile-sports">
+        <div class="sport-tag primary">⛷️ Scialpinismo</div>
+        <div class="sport-tag">🚴 Ciclismo</div>
+        <div class="sport-tag">🏊 Nuoto</div>
+        <div class="sport-tag">🥾 Escursioni</div>
+        <div class="sport-tag">🎿 Sci</div>
+      </div>
+      <div class="section-header" style="padding: 20px 0 8px;"><div class="section-title">Momenti</div></div>
+      <div class="profile-gallery">
+        <img class="gallery-img" src="https://images.unsplash.com/photo-1491555103944-7c647fd857e6?w=300&q=80" alt="">
+        <img class="gallery-img" src="https://images.unsplash.com/photo-1530549387789-4c1017266635?w=300&q=80" alt="">
+        <img class="gallery-img" src="https://images.unsplash.com/photo-1485965120184-e220f721d03e?w=300&q=80" alt="">
+        <img class="gallery-img" src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=300&q=80" alt="">
+        <img class="gallery-img" src="https://images.unsplash.com/photo-1483721310020-03333e577078?w=300&q=80" alt="">
+        <img class="gallery-img" src="https://images.unsplash.com/photo-1580058572462-98e2c0e0e2f0?w=300&q=80" alt="">
+      </div>
+      <div style="height: 120px;"></div>
+    </div>
+    <div class="bottom-nav">
+      <div class="nav-item" onclick="navigate('home')"><div class="nav-icon">🏠</div><div class="nav-label">HOME</div></div>
+      <div class="nav-item" onclick="navigate('feed')"><div class="nav-icon">🔍</div><div class="nav-label">ESPLORA</div></div>
+      <div class="nav-item" onclick="navigate('create-trip')"><div class="nav-plus">+</div></div>
+      <div class="nav-item" onclick="navigate('chat')"><div class="nav-icon">💬</div><div class="nav-label">CHAT</div></div>
+      <div class="nav-item" onclick="navigate('profile-francesco')"><div class="nav-icon">👤</div><div class="nav-label">PROFILO</div></div>
+    </div>
+  </div>
+
+  <!-- ═══════════ CREATE TRIP ═══════════ -->
+  <div id="create-trip" class="screen">
+    <div class="screen-header">
+      <button class="back-btn" onclick="navigate('feed')">←</button>
+      <div class="screen-title">Nuova Gita</div>
+    </div>
+
+    <div style="padding: 16px 20px 0;">
+      <div style="font-size: 13px; color: var(--text-secondary); line-height: 1.5;">Importa un itinerario da Gulliver o crea una gita da zero.</div>
+    </div>
+
+    <div style="padding: 16px 0 0;">
+      <div class="gulliver-import-card" onclick="navigate('create-trip-filled')">
+        <div class="gulliver-import-header">
+          <span style="font-size: 20px;">🌐</span>
+          <div>
+            <div class="gulliver-logo">Importa da Gulliver.it</div>
+            <div class="gulliver-import-text">Incolla il link dell'itinerario</div>
+          </div>
+        </div>
+        <div class="gulliver-url">gulliver.it/itinerari/gran-paradiso-da-pont-valsavarenche...</div>
+      </div>
+    </div>
+
+    <div style="padding: 0 20px; margin-bottom: 16px;">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <div style="flex: 1; height: 1px; background: var(--border);"></div>
+        <div style="font-size: 12px; color: var(--text-muted); font-weight: 600;">oppure compila a mano</div>
+        <div style="flex: 1; height: 1px; background: var(--border);"></div>
+      </div>
+    </div>
+
+    <div class="form-group"><label class="form-label">Nome della gita</label><input class="form-input" placeholder="es. Gran Paradiso da Pont" readonly></div>
+    <div class="form-group"><label class="form-label">Data</label><input class="form-input" placeholder="Seleziona data" readonly></div>
+    <div class="form-group"><label class="form-label">Punto di partenza</label><input class="form-input" placeholder="es. Pont Valsavarenche, 1960m" readonly></div>
+    <div class="form-group"><label class="form-label">Dislivello positivo</label><input class="form-input" placeholder="es. 2100m" readonly></div>
+    <div class="form-group"><label class="form-label">Difficoltà</label><input class="form-input" placeholder="es. BSA" readonly></div>
+    <div class="form-group"><label class="form-label">Posti squadra (min)</label><input class="form-input" placeholder="es. 3" readonly></div>
+
+    <div style="height: 120px;"></div>
+    <div class="bottom-nav">
+      <div class="nav-item" onclick="navigate('home')"><div class="nav-icon">🏠</div><div class="nav-label">HOME</div></div>
+      <div class="nav-item" onclick="navigate('feed')"><div class="nav-icon">🔍</div><div class="nav-label">ESPLORA</div></div>
+      <div class="nav-item active"><div class="nav-plus">+</div></div>
+      <div class="nav-item" onclick="navigate('chat')"><div class="nav-icon">💬</div><div class="nav-label">CHAT</div></div>
+      <div class="nav-item" onclick="navigate('profile-francesco')"><div class="nav-icon">👤</div><div class="nav-label">PROFILO</div></div>
+    </div>
+  </div>
+
+  <!-- ═══════════ CREATE TRIP (Filled) ═══════════ -->
+  <div id="create-trip-filled" class="screen">
+    <div class="screen-header">
+      <button class="back-btn" onclick="navigate('create-trip')">←</button>
+      <div class="screen-title">Nuova Gita</div>
+    </div>
+
+    <div style="padding: 0 20px 16px;">
+      <div style="display: flex; align-items: center; gap: 8px; background: rgba(0,191,165,0.08); border: 1px solid rgba(0,191,165,0.2); border-radius: 10px; padding: 10px 14px;">
+        <span style="font-size: 16px;">✅</span>
+        <div>
+          <div style="font-size: 13px; font-weight: 600; color: var(--teal);">Importato da Gulliver.it</div>
+          <div style="font-size: 11px; color: var(--text-muted);">Dati itinerario compilati automaticamente</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-group"><label class="form-label">Nome della gita</label><input class="form-input" value="Gran Paradiso da Pont Valsavarenche" readonly></div>
+    <div class="form-group"><label class="form-label">Data</label><input class="form-input" value="5-6 Aprile 2026" readonly></div>
+    <div class="form-group"><label class="form-label">Punto di partenza</label><input class="form-input" value="Pont Valsavarenche (1960m)" readonly></div>
+    <div class="form-group"><label class="form-label">Pernottamento</label><input class="form-input" value="Rifugio Vittorio Emanuele II (2735m)" readonly></div>
+
+    <div style="display: flex; gap: 10px; padding: 0 20px; margin-bottom: 20px;">
+      <div style="flex: 1;"><label class="form-label">Dislivello</label><input class="form-input" value="2100m D+" readonly></div>
+      <div style="flex: 1;"><label class="form-label">Difficoltà</label><input class="form-input" value="BSA" readonly></div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Squadra minima</label>
+      <div style="display: flex; gap: 10px; margin-top: 4px;">
+        <div style="width: 44px; height: 44px; border-radius: 12px; background: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 800; color: white;">3</div>
+        <div style="font-size: 12px; color: var(--text-secondary); line-height: 1.4; padding-top: 4px;">Per scialpinismo è raccomandato<br>un minimo di 3 persone</div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Descrizione</label>
+      <div class="form-input" style="min-height: 60px; line-height: 1.4; font-size: 13px; color: var(--text-secondary);">Una delle grandi classiche delle Alpi. Salita al Rifugio Vittorio Emanuele il primo giorno, vetta il secondo con discesa sul Ghiacciaio del Gran Paradiso.</div>
+    </div>
+
+    <div style="padding: 0 20px 12px;">
+      <button class="cta-btn" onclick="navigate('trip-detail')">Pubblica gita ⛷️</button>
+    </div>
+
+    <div style="height: 100px;"></div>
+    <div class="bottom-nav">
+      <div class="nav-item" onclick="navigate('home')"><div class="nav-icon">🏠</div><div class="nav-label">HOME</div></div>
+      <div class="nav-item" onclick="navigate('feed')"><div class="nav-icon">🔍</div><div class="nav-label">ESPLORA</div></div>
+      <div class="nav-item active"><div class="nav-plus">+</div></div>
+      <div class="nav-item" onclick="navigate('chat')"><div class="nav-icon">💬</div><div class="nav-label">CHAT</div></div>
+      <div class="nav-item" onclick="navigate('profile-francesco')"><div class="nav-icon">👤</div><div class="nav-label">PROFILO</div></div>
+    </div>
+  </div>
+
+  <!-- ═══════════ TRIP DETAIL ═══════════ -->
+  <div id="trip-detail" class="screen">
+    <div class="trip-detail-hero" style="background-image: url('https://images.unsplash.com/photo-1491555103944-7c647fd857e6?w=800&q=80');">
+      <div class="screen-header" style="background: transparent; position: absolute; top: 0;">
+        <button class="back-btn" onclick="navigate('feed')">←</button>
+      </div>
+    </div>
+
+    <div class="trip-detail-content">
+      <div class="trip-detail-title">Gran Paradiso 4061m</div>
+      <div class="trip-detail-subtitle">
+        📍 Pont Valsavarenche, VdA
+        <span class="gulliver-badge">🌐 Gulliver.it</span>
+      </div>
+
+      <div class="trip-stats-grid">
+        <div class="trip-stat-card"><div class="trip-stat-label">Dislivello</div><div class="trip-stat-value">2100 <span class="trip-stat-unit">m D+</span></div></div>
+        <div class="trip-stat-card"><div class="trip-stat-label">Quota max</div><div class="trip-stat-value">4061 <span class="trip-stat-unit">m</span></div></div>
+        <div class="trip-stat-card"><div class="trip-stat-label">Difficoltà</div><div class="trip-stat-value" style="color: var(--accent-light);">BSA</div></div>
+        <div class="trip-stat-card"><div class="trip-stat-label">Durata</div><div class="trip-stat-value">2 <span class="trip-stat-unit">giorni</span></div></div>
+      </div>
+
+      <div class="section-header" style="padding: 24px 0 12px;">
+        <div class="section-title">Programma</div>
+        <div style="font-size: 12px; color: var(--text-muted);">5-6 Apr 2026</div>
+      </div>
+
+      <div class="trip-timeline">
+        <div class="timeline-item"><div class="timeline-dot">🚗</div><div class="timeline-content"><div class="timeline-time">SAB 5 · 05:30</div><div class="timeline-text">Ritrovo e partenza da Torino</div><div class="timeline-sub">Parcheggio Lingotto — 2h di auto</div></div></div>
+        <div class="timeline-item"><div class="timeline-dot">🅿️</div><div class="timeline-content"><div class="timeline-time">SAB 5 · 07:30</div><div class="timeline-text">Arrivo a Pont Valsavarenche (1960m)</div><div class="timeline-sub">Parcheggio al termine della strada</div></div></div>
+        <div class="timeline-item"><div class="timeline-dot">⛷️</div><div class="timeline-content"><div class="timeline-time">SAB 5 · 08:00</div><div class="timeline-text">Salita al Rif. Vittorio Emanuele II</div><div class="timeline-sub">800m D+ · ~3-4h · Bosco di larici → morena</div></div></div>
+        <div class="timeline-item"><div class="timeline-dot">🏠</div><div class="timeline-content"><div class="timeline-time">SAB 5 · 12:00</div><div class="timeline-text">Rifugio Vittorio Emanuele II (2735m)</div><div class="timeline-sub">Pernottamento e cena</div></div></div>
+        <div class="timeline-item"><div class="timeline-dot">🌅</div><div class="timeline-content"><div class="timeline-time">DOM 6 · 05:00</div><div class="timeline-text">Salita alla vetta (4061m)</div><div class="timeline-sub">1300m D+ · ~4h · Ghiacciaio del Gran Paradiso</div></div></div>
+        <div class="timeline-item"><div class="timeline-dot">🎿</div><div class="timeline-content"><div class="timeline-time">DOM 6 · 09:00</div><div class="timeline-text">Discesa sci fino a Pont</div><div class="timeline-sub">2100m D- · ~2h · Neve primaverile!</div></div></div>
+      </div>
+
+      <div class="section-header" style="padding: 24px 0 12px;">
+        <div class="section-title">Squadra (3/3)</div>
+        <div style="font-size: 12px; color: var(--success); font-weight: 600;">✓ Completa</div>
+      </div>
+
+      <div class="participant-row" onclick="navigate('profile-francesco')">
+        <img class="participant-avatar" src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&q=80" alt="">
+        <div class="participant-info">
+          <div class="participant-name">Francesco <span class="match-score">Organizzatore</span></div>
+          <div class="participant-role">47 gite · Torino</div>
+        </div>
+        <div class="participant-status status-confirmed">Confermato</div>
+      </div>
+      <div class="participant-row" onclick="navigate('profile-monica')">
+        <img class="participant-avatar" src="https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=100&q=80" alt="">
+        <div class="participant-info">
+          <div class="participant-name">Monica <span class="match-score">4 sport in comune</span></div>
+          <div class="participant-role">38 gite · Torino</div>
+        </div>
+        <div class="participant-status status-confirmed">Confermata</div>
+      </div>
+      <div class="participant-row" onclick="navigate('profile-nicola')">
+        <img class="participant-avatar" src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=100&q=80" alt="">
+        <div class="participant-info">
+          <div class="participant-name">Nicola <span class="match-score">4 sport in comune</span></div>
+          <div class="participant-role">62 gite · Torino</div>
+        </div>
+        <div class="participant-status status-confirmed">Confermato</div>
+      </div>
+
+      <div class="section-header" style="padding: 24px 0 12px;"><div class="section-title">Partenza</div></div>
+
+      <div class="map-container">
+        <img class="map-img" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 300'%3E%3Cdefs%3E%3ClinearGradient id='bg' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0%25' stop-color='%230B1120'/%3E%3Cstop offset='100%25' stop-color='%23151E30'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill='url(%23bg)' width='600' height='300'/%3E%3C!-- Mountains --%3E%3Cpolygon fill='%231C2840' points='0,250 80,140 140,180 200,100 280,160 360,80 440,150 520,120 600,170 600,300 0,300'/%3E%3Cpolygon fill='%23151E30' points='0,270 100,180 180,220 260,150 340,200 420,130 500,190 600,160 600,300 0,300'/%3E%3C!-- Snow caps --%3E%3Cpolygon fill='%2364B5F6' opacity='0.3' points='200,100 190,115 210,115'/%3E%3Cpolygon fill='%2364B5F6' opacity='0.3' points='360,80 350,95 370,95'/%3E%3C!-- Grid lines --%3E%3Cline x1='0' y1='100' x2='600' y2='100' stroke='%231E2E48' stroke-width='0.5'/%3E%3Cline x1='0' y1='200' x2='600' y2='200' stroke='%231E2E48' stroke-width='0.5'/%3E%3Cline x1='200' y1='0' x2='200' y2='300' stroke='%231E2E48' stroke-width='0.5'/%3E%3Cline x1='400' y1='0' x2='400' y2='300' stroke='%231E2E48' stroke-width='0.5'/%3E%3C!-- Pin --%3E%3Ccircle cx='300' cy='180' r='10' fill='%232196F3'/%3E%3Ccircle cx='300' cy='180' r='5' fill='white'/%3E%3Ccircle cx='300' cy='180' r='18' fill='%232196F3' opacity='0.2'/%3E%3C!-- Labels --%3E%3Ctext x='300' y='220' fill='%238B9DC3' text-anchor='middle' font-family='sans-serif' font-size='12' font-weight='600'%3EPont Valsavarenche%3C/text%3E%3Ctext x='300' y='238' fill='%23506080' text-anchor='middle' font-family='sans-serif' font-size='10'%3E45.509%C2%B0 N, 7.182%C2%B0 E %C2%B7 1960m%3C/text%3E%3Ctext x='360' y='75' fill='%2364B5F6' text-anchor='middle' font-family='sans-serif' font-size='10' font-weight='600'%3EGran Paradiso%3C/text%3E%3Ctext x='360' y='62' fill='%2364B5F6' text-anchor='middle' font-family='sans-serif' font-size='9' opacity='0.7'%3E4061m%3C/text%3E%3C/svg%3E" alt="Mappa">
+        <div class="map-overlay">
+          <div class="map-location">📍 Pont Valsavarenche</div>
+          <div class="map-coords">45.509° N, 7.182° E · 1960m s.l.m.</div>
+        </div>
+      </div>
+
+      <div style="padding: 16px 0;">
+        <button class="cta-btn" onclick="navigate('transport')">🚗 Organizza trasporto</button>
+      </div>
+      <div style="height: 80px;"></div>
+    </div>
+
+    <div class="bottom-nav">
+      <div class="nav-item" onclick="navigate('home')"><div class="nav-icon">🏠</div><div class="nav-label">HOME</div></div>
+      <div class="nav-item" onclick="navigate('feed')"><div class="nav-icon">🔍</div><div class="nav-label">ESPLORA</div></div>
+      <div class="nav-item" onclick="navigate('create-trip')"><div class="nav-plus">+</div></div>
+      <div class="nav-item" onclick="navigate('chat')"><div class="nav-icon">💬</div><div class="nav-label">CHAT</div></div>
+      <div class="nav-item" onclick="navigate('profile-francesco')"><div class="nav-icon">👤</div><div class="nav-label">PROFILO</div></div>
+    </div>
+  </div>
+
+  <!-- ═══════════ TRANSPORT ═══════════ -->
+  <div id="transport" class="screen">
+    <div class="screen-header">
+      <button class="back-btn" onclick="navigate('trip-detail')">←</button>
+      <div class="screen-title">Trasporto</div>
+    </div>
+
+    <div style="padding: 8px 20px 16px;">
+      <div style="font-size: 14px; font-weight: 600;">Gran Paradiso · 5 Aprile</div>
+      <div style="font-size: 12px; color: var(--text-secondary);">Torino → Pont Valsavarenche · ~2h</div>
+    </div>
+
+    <div class="transport-card" style="border-color: var(--accent);">
+      <div class="transport-header">
+        <div class="transport-icon-wrap">🚗</div>
+        <div><div class="transport-title">Auto di Francesco</div><div class="transport-sub">Organizzatore · 4 posti disponibili</div></div>
+      </div>
+      <div class="transport-detail-row"><span class="transport-label">Veicolo</span><span class="transport-value">Subaru Forester</span></div>
+      <div class="transport-detail-row"><span class="transport-label">Ritrovo</span><span class="transport-value">Parcheggio Lingotto, TO</span></div>
+      <div class="transport-detail-row"><span class="transport-label">Partenza</span><span class="transport-value" style="color: var(--accent-light);">Sabato 05:30</span></div>
+      <div class="transport-detail-row"><span class="transport-label">Arrivo stimato</span><span class="transport-value">~07:30 a Pont</span></div>
+      <div class="transport-detail-row"><span class="transport-label">Spazio sci</span><span class="transport-value">✓ Portasci da tetto</span></div>
+      <div class="transport-detail-row"><span class="transport-label">Costo carburante</span><span class="transport-value">~€15 a testa</span></div>
+
+      <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border);">
+        <div style="font-size: 12px; color: var(--text-muted); font-weight: 600; margin-bottom: 8px;">PASSEGGERI (3/4)</div>
+        <div style="display: flex; align-items: center; gap: 8px; padding: 6px 0;">
+          <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&q=80" alt="" style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover;">
+          <div><div style="font-size: 13px; font-weight: 600;">Francesco</div><div style="font-size: 10px; color: var(--accent-light);">🚗 Guida</div></div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px; padding: 6px 0;">
+          <img src="https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=100&q=80" alt="" style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover;">
+          <div><div style="font-size: 13px; font-weight: 600;">Monica</div><div style="font-size: 10px; color: var(--teal);">✓ Confermata</div></div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px; padding: 6px 0;">
+          <img src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=100&q=80" alt="" style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover;">
+          <div><div style="font-size: 13px; font-weight: 600;">Nicola</div><div style="font-size: 10px; color: var(--teal);">✓ Confermato</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin: 8px 20px 16px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; padding: 16px;">
+      <div style="font-size: 14px; font-weight: 700; margin-bottom: 12px;">📋 Riepilogo trasporto</div>
+      <div style="display: flex; justify-content: space-between; padding: 6px 0; font-size: 13px;"><span style="color: var(--text-muted);">Equipaggio</span><span style="font-weight: 600;">3 persone, 1 auto</span></div>
+      <div style="display: flex; justify-content: space-between; padding: 6px 0; font-size: 13px;"><span style="color: var(--text-muted);">Percorso</span><span style="font-weight: 600;">Torino → Pont (140km)</span></div>
+      <div style="display: flex; justify-content: space-between; padding: 6px 0; font-size: 13px;"><span style="color: var(--text-muted);">Costo stimato</span><span style="font-weight: 600; color: var(--accent-light);">€15/persona</span></div>
+      <div style="display: flex; justify-content: space-between; padding: 6px 0; font-size: 13px;"><span style="color: var(--text-muted);">Materiale sci</span><span style="font-weight: 600; color: var(--teal);">✓ Portasci</span></div>
+    </div>
+
+    <div style="padding: 0 20px 12px;">
+      <button class="cta-btn" onclick="navigate('chat')">💬 Apri chat di gruppo</button>
+    </div>
+
+    <div style="height: 100px;"></div>
+    <div class="bottom-nav">
+      <div class="nav-item" onclick="navigate('home')"><div class="nav-icon">🏠</div><div class="nav-label">HOME</div></div>
+      <div class="nav-item" onclick="navigate('feed')"><div class="nav-icon">🔍</div><div class="nav-label">ESPLORA</div></div>
+      <div class="nav-item" onclick="navigate('create-trip')"><div class="nav-plus">+</div></div>
+      <div class="nav-item" onclick="navigate('chat')"><div class="nav-icon">💬</div><div class="nav-label">CHAT</div></div>
+      <div class="nav-item" onclick="navigate('profile-francesco')"><div class="nav-icon">👤</div><div class="nav-label">PROFILO</div></div>
+    </div>
+  </div>
+
+  <!-- ═══════════ CHAT ═══════════ -->
+  <div id="chat" class="screen">
+    <div class="screen-header">
+      <button class="back-btn" onclick="navigate('trip-detail')">←</button>
+      <div style="flex: 1;">
+        <div class="screen-title">Gran Paradiso ⛷️</div>
+        <div style="font-size: 11px; color: var(--text-muted);">Francesco, Monica, Nicola</div>
+      </div>
+      <div style="display: flex;">
+        <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=60&q=80" style="width: 28px; height: 28px; border-radius: 50%; object-fit: cover; border: 2px solid var(--bg-primary);">
+        <img src="https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=60&q=80" style="width: 28px; height: 28px; border-radius: 50%; object-fit: cover; border: 2px solid var(--bg-primary); margin-left: -8px;">
+        <img src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=60&q=80" style="width: 28px; height: 28px; border-radius: 50%; object-fit: cover; border: 2px solid var(--bg-primary); margin-left: -8px;">
+      </div>
+    </div>
+
+    <div class="chat-container">
+      <div class="chat-date">Martedì 31 Marzo 2026</div>
+
+      <div class="chat-message self">
+        <img class="chat-avatar" src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=60&q=80" alt="">
+        <div>
+          <div class="chat-bubble">Ragazzi, ho creato la gita al Gran Paradiso per il 5-6 aprile! L'ho importata direttamente da Gulliver. Chi c'è? 🏔️</div>
+          <div class="chat-time">18:32</div>
+        </div>
+      </div>
+
+      <div class="chat-message">
+        <img class="chat-avatar" src="https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=60&q=80" alt="">
+        <div>
+          <div class="chat-sender">Monica</div>
+          <div class="chat-bubble">Ci sonooo! Che bello, ho sempre voluto fare il GP con gli sci. Come siamo messi con il trasporto?</div>
+          <div class="chat-time">18:45</div>
+        </div>
+      </div>
+
+      <div class="chat-message">
+        <img class="chat-avatar" src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=60&q=80" alt="">
+        <div>
+          <div class="chat-sender">Nicola</div>
+          <div class="chat-bubble">Presente! Ho visto la scheda su Gulliver, il percorso è perfetto per questa stagione. La neve dovrebbe tenere bene ad aprile.</div>
+          <div class="chat-time">19:02</div>
+        </div>
+      </div>
+
+      <div class="chat-message self">
+        <img class="chat-avatar" src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=60&q=80" alt="">
+        <div>
+          <div class="chat-bubble">Top, siamo in 3! Io ho il Forester con portasci, ci entriamo tranquilli. Ritrovo al Lingotto alle 5:30?</div>
+          <div class="chat-time">19:10</div>
+        </div>
+      </div>
+
+      <div class="chat-message">
+        <img class="chat-avatar" src="https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=60&q=80" alt="">
+        <div>
+          <div class="chat-sender">Monica</div>
+          <div class="chat-bubble">5:30 perfetto. Porto i thermos con caffè caldo per la strada! Qualcuno ha già prenotato il rifugio?</div>
+          <div class="chat-time">19:18</div>
+        </div>
+      </div>
+
+      <div class="chat-message">
+        <img class="chat-avatar" src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=60&q=80" alt="">
+        <div>
+          <div class="chat-sender">Nicola</div>
+          <div class="chat-bubble">Ci penso io per il rifugio, l'ho già fatto in passato. Il Vittorio Emanuele è sempre un'esperienza. Dividiamo il gasolio in tre, saranno tipo 15€ a testa. Vi va?</div>
+          <div class="chat-time">19:25</div>
+        </div>
+      </div>
+
+      <div class="chat-message self">
+        <img class="chat-avatar" src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=60&q=80" alt="">
+        <div>
+          <div class="chat-bubble">Perfetto! Allora ci siamo. Controllate ARPA e meteo nei prossimi giorni. Sarà un weekend da ricordare</div>
+          <div class="chat-time">19:31</div>
+        </div>
+      </div>
+
+      <div class="chat-message">
+        <img class="chat-avatar" src="https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=60&q=80" alt="">
+        <div>
+          <div class="chat-sender">Monica</div>
+          <div class="chat-bubble">Non vedo l'ora! ✨</div>
+          <div class="chat-time">19:33</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="chat-input-bar">
+      <input class="chat-input" placeholder="Scrivi un messaggio..." readonly>
+      <button class="chat-send-btn">→</button>
+    </div>
+
+    <div class="bottom-nav">
+      <div class="nav-item" onclick="navigate('home')"><div class="nav-icon">🏠</div><div class="nav-label">HOME</div></div>
+      <div class="nav-item" onclick="navigate('feed')"><div class="nav-icon">🔍</div><div class="nav-label">ESPLORA</div></div>
+      <div class="nav-item" onclick="navigate('create-trip')"><div class="nav-plus">+</div></div>
+      <div class="nav-item active"><div class="nav-icon">💬</div><div class="nav-label">CHAT</div></div>
+      <div class="nav-item" onclick="navigate('profile-francesco')"><div class="nav-icon">👤</div><div class="nav-label">PROFILO</div></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Footer -->
+<div style="text-align: center; padding: 16px; font-size: 13px; font-family: 'Inter', sans-serif;">
+  <span style="color: var(--text-primary); font-weight: 800;">Spor</span><span style="color: #2196F3; font-weight: 800;">T</span><span style="color: #00BFA5; font-weight: 800;">ogather</span>
+  <span style="color: #506080;"> — Demo prototipo · Clicca per navigare</span>
+</div>
+
+<script>
+  function navigate(screenId) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    const target = document.getElementById(screenId);
+    if (target) {
+      target.classList.add('active');
+      target.scrollTop = 0;
+    }
+  }
+</script>
+
+</body>
+</html>
